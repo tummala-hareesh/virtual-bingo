@@ -12,9 +12,10 @@ jobs:
       - name: Trigger Render deploy hook
         run: |
           if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
-            echo "RENDER_DEPLOY_HOOK_URL secret is not set yet."
-            echo "Add it under Settings > Secrets and variables > Actions in this repo."
-            echo "You can find the URL on Render: your service > Settings > Deploy Hook."
-            exit 1
+            echo "⚠️  RENDER_DEPLOY_HOOK_URL secret is not set — skipping deploy trigger."
+            echo "To enable auto-deploy: Render service > Settings > Deploy Hook > copy URL"
+            echo "Then: GitHub repo > Settings > Secrets > Actions > New secret > RENDER_DEPLOY_HOOK_URL"
+            exit 0
           fi
           curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          echo "✅ Render deploy triggered."
