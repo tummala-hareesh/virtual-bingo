@@ -16,7 +16,7 @@ players. The host shares a QR code; everyone scans it and plays instantly.
 Deploy your own instance to [Render](https://render.com) for free — players can
 join from any network, any device, no shared Wi-Fi required.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/hareesh-tummala/virtual-bingo)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/tummala-hareesh/virtual-bingo)
 
 Once deployed you get a permanent URL like `https://virtual-bingo-xxxx.onrender.com`.
 Share that link (or the QR code the admin screen generates) and anyone anywhere
