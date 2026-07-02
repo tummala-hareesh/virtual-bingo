@@ -1,0 +1,13 @@
+{
+  "name": "family-bingo",
+  "version": "1.0.0",
+  "description": "Bingo game for family and friends. Zero dependencies — works local-network or deployed free.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}

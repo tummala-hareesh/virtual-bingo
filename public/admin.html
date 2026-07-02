@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Virtual Bingo — Admin</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+<script src="/qrcode.js"></script>
+<style>
+  .lobby-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-soft);
+    margin-bottom: 8px;
+    animation: row-in 0.25s ease;
+  }
+  @keyframes row-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .lobby-player .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 800; font-size: 15px;
+    color: #fff; flex-shrink: 0;
+  }
+  .lobby-player .pname { font-weight: 700; font-family: var(--font-display); }
+  .lobby-empty {
+    text-align: center; color: var(--text-dim); font-size: 14px;
+    padding: 24px 0;
+  }
+  .game-over-banner {
+    display: none;
+    background: linear-gradient(135deg, var(--yellow), var(--tangerine));
+    color: var(--bg);
+    border-radius: var(--radius-md);
+    padding: 20px 28px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .game-over-banner.show { display: block; }
+  .game-over-banner h2 { font-size: 24px; margin-bottom: 4px; }
+  .game-over-banner p { font-size: 14px; opacity: 0.8; margin: 0; }
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--teal);
+    display: inline-block;
+    animation: dot-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>Virtual Bingo <span class="dim" style="font-weight:600; font-size:14px;">/ admin</span></div>
+    <div id="resetWrap" style="display:none;">
+      <button class="btn secondary" id="resetBtn">Start a new game</button>
+    </div>
+  </div>
+
+  <!-- ===== Setup screen ===== -->
+  <div id="setupScreen">
+    <div class="card" style="max-width:480px; margin:0 auto; text-align:center;">
+      <div class="ball-stage" style="padding:20px 0 10px;">
+        <div class="ball" style="animation:none; width:100px; height:100px; font-size:36px;">75</div>
+      </div>
+      <h2 style="font-size:28px; margin-top:8px;">Ready to play?</h2>
+      <p class="dim" style="font-size:14px; margin-top:10px;">Open a lobby and share the QR code. Players join themselves — no pre-entering names needed.</p>
+      <button class="btn lg block mt-16" id="openLobbyBtn">Open Lobby</button>
+    </div>
+  </div>
+
+  <!-- ===== Lobby screen ===== -->
+  <div id="lobbyScreen" style="display:none;">
+    <div class="game-over-banner" id="gameOverBanner">
+      <h2>🏆 Full House — Game Over!</h2>
+      <p>Click "Start a new game" to play again.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card center fs-target" id="qrCard">
+        <div class="card-head">
+          <span class="eyebrow">Scan to join</span>
+          <button class="fs-btn" data-target="qrCard">⛶ Full screen</button>
+        </div>
+        <div class="qr-box mt-16" id="qrCode"></div>
+        <p class="pill mt-16" id="joinUrl">—</p>
+        <p class="dim mt-16" id="joinCode" style="font-family:var(--font-mono); font-size:15px;"></p>
+      </div>
+
+      <div class="card" id="lobbyCard">
+        <div class="card-head">
+          <span class="eyebrow">
+            <span class="pulse-dot" id="lobbyDot"></span>
+            &nbsp;Waiting for players
+          </span>
+          <span id="playerCount" style="font-family:var(--font-mono); font-size:13px; color:var(--text-dim);">0 joined</span>
+        </div>
+        <div id="lobbyList" class="mt-16">
+          <div class="lobby-empty">No one yet — share the QR code above!</div>
+        </div>
+        <button class="btn block mt-16" id="startGameBtn" disabled style="opacity:0.4;">
+          Start Game
+        </button>
+        <p class="dim center" style="font-size:12px; margin-top:8px;" id="startHint">Waiting for at least 1 player…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Game (draw) screen ===== -->
+  <div id="gameScreen" style="display:none;">
+    <div class="game-over-banner" id="gameOverBannerGame">
+      <h2>🏆 Full House — Game Over!</h2>
+      <p>Click "Start a new game" to play again.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card center fs-target" id="qrCardGame">
+        <div class="card-head">
+          <span class="eyebrow">Scan to join</span>
+          <button class="fs-btn" data-target="qrCardGame">⛶ Full screen</button>
+        </div>
+        <div class="qr-box mt-16" id="qrCodeGame"></div>
+        <p class="pill mt-16" id="joinUrlGame">—</p>
+        <p class="dim mt-16" id="joinCodeGame" style="font-family:var(--font-mono); font-size:15px;"></p>
+      </div>
+
+      <div class="card center fs-target" id="drawCard">
+        <div class="card-head">
+          <span class="eyebrow">Call the next number</span>
+          <button class="fs-btn" data-target="drawCard">⛶ Full screen</button>
+        </div>
+        <div class="bowl-wrap">
+          <div class="bowl" id="bowl"></div>
+        </div>
+        <div class="ball-stage">
+          <div class="ball" id="ballDisplay">–</div>
+        </div>
+        <button class="btn lg block" id="drawBtn">🎉 Draw Number</button>
+        <p class="dim mt-16" id="remainingText">75 numbers remaining</p>
+      </div>
+    </div>
+
+    <div class="card mt-24 fs-target" id="historyCard">
+      <div class="card-head">
+        <span class="eyebrow">Called so far</span>
+        <button class="fs-btn" data-target="historyCard">⛶ Full screen</button>
+      </div>
+      <div class="history-row mt-16" id="historyRow"></div>
+    </div>
+
+    <div class="card mt-24 fs-target" id="prizesCard">
+      <div class="card-head">
+        <span class="eyebrow">Prizes</span>
+        <button class="fs-btn" data-target="prizesCard">⛶ Full screen</button>
+      </div>
+      <div class="tier-row" id="tierRow">
+        <div class="tier" data-tier="line1"><div class="label">1 LINE</div><div class="winner-name">—</div></div>
+        <div class="tier" data-tier="line2"><div class="label">2 LINES</div><div class="winner-name">—</div></div>
+        <div class="tier" data-tier="fullHouse"><div class="label">FULL HOUSE</div><div class="winner-name">—</div></div>
+      </div>
+    </div>
+
+    <div class="card mt-24">
+      <span class="eyebrow">Players</span>
+      <div id="playerList" class="mt-16"></div>
+    </div>
+  </div>
+
+  <div class="celebrate-overlay" id="celebrateOverlay">
+    <div class="celebrate-card">
+      <div class="big-emoji" id="celebrateEmoji">🏆</div>
+      <h2 id="celebrateTitle">Winner!</h2>
+      <p id="celebrateSub">Tap anywhere to continue</p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const toast = document.getElementById('toast');
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+const LETTERS = { B: [1,15], I: [16,30], N: [31,45], G: [46,60], O: [61,75] };
+function letterFor(n) {
+  for (const [letter, [lo, hi]] of Object.entries(LETTERS)) {
+    if (n >= lo && n <= hi) return letter;
+  }
+  return '';
+}
+
+// ---------- Bowl ----------
+const BALL_COLORS = ['#FF3D81', '#FFD23F', '#00D9C0', '#FF7A3D', '#8B5CF6', '#00A8E0'];
+function setupBowl() {
+  const bowl = document.getElementById('bowl');
+  if (!bowl) return;
+  bowl.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const ball = document.createElement('span');
+    ball.className = 'mini-ball';
+    ball.style.left = (8 + Math.random() * 150) + 'px';
+    ball.style.top = (30 + Math.random() * 55) + 'px';
+    ball.style.background = `radial-gradient(circle at 30% 25%, #fff, ${BALL_COLORS[i % BALL_COLORS.length]} 60%)`;
+    ball.style.animationDelay = (Math.random() * 1.6) + 's';
+    bowl.appendChild(ball);
+  }
+}
+
+function playBowlDraw() {
+  return new Promise((resolve) => {
+    const bowl = document.getElementById('bowl');
+    bowl.classList.add('shaking');
+    setTimeout(() => {
+      bowl.classList.remove('shaking');
+      const balls = bowl.querySelectorAll('.mini-ball');
+      const chosen = balls[Math.floor(Math.random() * balls.length)];
+      if (chosen) chosen.classList.add('picked');
+      setTimeout(() => {
+        if (chosen) chosen.remove();
+        setupBowl();
+        resolve();
+      }, 650);
+    }, 500);
+  });
+}
+
+// ---------- Celebration ----------
+const celebrateOverlay = document.getElementById('celebrateOverlay');
+celebrateOverlay.addEventListener('click', () => celebrateOverlay.classList.remove('show'));
+
+const TIER_INFO = {
+  line1: { emoji: '🎉', title: (n) => `${n} got a Line!`, confettiCount: 40 },
+  line2: { emoji: '🎉🎉', title: (n) => `${n} got 2 Lines!`, confettiCount: 55 },
+  fullHouse: { emoji: '🏆', title: (n) => `${n} got FULL HOUSE!`, confettiCount: 90 },
+};
+
+function burstConfetti(count) {
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.width = piece.style.height = (6 + Math.random() * 6) + 'px';
+    piece.style.background = BALL_COLORS[Math.floor(Math.random() * BALL_COLORS.length)];
+    document.body.appendChild(piece);
+    const duration = 1800 + Math.random() * 1200;
+    piece.animate([
+      { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+      { transform: `translateY(100vh) rotate(${360 + Math.random()*360}deg)`, opacity: 0.9 }
+    ], { duration, easing: 'ease-in' });
+    setTimeout(() => piece.remove(), duration);
+  }
+}
+
+function celebrate(tier, name) {
+  const info = TIER_INFO[tier];
+  if (!info) return;
+  document.getElementById('celebrateEmoji').textContent = info.emoji;
+  document.getElementById('celebrateTitle').textContent = info.title(name);
+  document.getElementById('celebrateSub').textContent = tier === 'fullHouse' ? 'Game over — tap to continue' : 'Tap anywhere to continue';
+  celebrateOverlay.classList.add('show');
+  burstConfetti(info.confettiCount);
+  clearTimeout(window.__celebrateTimer);
+  window.__celebrateTimer = setTimeout(() => celebrateOverlay.classList.remove('show'), 3400);
+}
+
+let knownWinners = { line1: null, line2: null, fullHouse: null };
+let winnersBaselineSet = false;
+
+function checkForNewWins(winners) {
+  if (!winnersBaselineSet) {
+    knownWinners = { ...winners };
+    winnersBaselineSet = true;
+    return;
+  }
+  ['line1', 'line2', 'fullHouse'].forEach((tier) => {
+    const prev = knownWinners[tier];
+    const now = winners[tier];
+    if (now && (!prev || prev.playerId !== now.playerId)) {
+      celebrate(tier, now.name);
+      if (tier === 'fullHouse') showGameOver();
+    }
+  });
+  knownWinners = { ...winners };
+}
+
+function showGameOver() {
+  document.getElementById('gameOverBanner').classList.add('show');
+  document.getElementById('gameOverBannerGame').classList.add('show');
+}
+
+// ---------- QR code rendering ----------
+let currentJoinCode = null;
+
+function renderQR(holderId, urlElId, codeElId, large) {
+  const qrHolder = document.getElementById(holderId);
+  const joinUrlEl = document.getElementById(urlElId);
+  const codeEl = document.getElementById(codeElId);
+  if (!qrHolder) return;
+
+  if (!currentJoinCode) {
+    qrHolder.innerHTML = '<p style="color:#150E2E; font-size:13px;">Create a new game to get a QR code.</p>';
+    if (joinUrlEl) joinUrlEl.textContent = '—';
+    if (codeEl) codeEl.textContent = '';
+    return;
+  }
+
+  const joinUrl = `${window.location.origin}/join?code=${currentJoinCode}`;
+  if (joinUrlEl) joinUrlEl.textContent = joinUrl;
+  if (codeEl) codeEl.textContent = `Or type this code at /join: ${currentJoinCode}`;
+  qrHolder.innerHTML = '';
+  const size = large ? 340 : 180;
+  new QRCode(qrHolder, { text: joinUrl, width: size, height: size, colorDark: '#150E2E', colorLight: '#ffffff' });
+}
+
+function renderAllQRs(large) {
+  renderQR('qrCode', 'joinUrl', 'joinCode', large);
+  renderQR('qrCodeGame', 'joinUrlGame', 'joinCodeGame', large);
+}
+
+// ---------- Fullscreen ----------
+function toggleFullscreen(id) {
+  const el = document.getElementById(id);
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!fsEl) {
+    (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen).call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen).call(document);
+  }
+}
+
+document.querySelectorAll('.fs-btn').forEach((btn) => {
+  btn.addEventListener('click', () => toggleFullscreen(btn.dataset.target));
+});
+
+function handleFullscreenChange() {
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  document.querySelectorAll('.fs-target').forEach((el) => {
+    const isThisOne = el === fsEl;
+    el.classList.toggle('is-fullscreen', isThisOne);
+    const btn = el.querySelector('.fs-btn');
+    if (btn) btn.textContent = isThisOne ? '↙ Exit full screen' : '⛶ Full screen';
+  });
+  const isQRFullscreen = fsEl && (fsEl.id === 'qrCard' || fsEl.id === 'qrCardGame');
+  renderAllQRs(isQRFullscreen);
+}
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+// ---------- Screen transitions ----------
+function showLobbyScreen(joinCode) {
+  currentJoinCode = joinCode;
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('lobbyScreen').style.display = 'block';
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('resetWrap').style.display = 'block';
+  renderAllQRs(false);
+}
+
+function showGameScreen() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('lobbyScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'block';
+  document.getElementById('resetWrap').style.display = 'block';
+  setupBowl();
+  renderAllQRs(false);
+}
+
+// ---------- Lobby screen: player list ----------
+function renderLobbyPlayers(players) {
+  const list = document.getElementById('lobbyList');
+  const count = document.getElementById('playerCount');
+  const startBtn = document.getElementById('startGameBtn');
+  const hint = document.getElementById('startHint');
+
+  count.textContent = `${players.length} joined`;
+
+  if (players.length === 0) {
+    list.innerHTML = '<div class="lobby-empty">No one yet — share the QR code above!</div>';
+  } else {
+    list.innerHTML = '';
+    players.forEach((p) => {
+      const row = document.createElement('div');
+      row.className = 'lobby-player';
+      row.innerHTML = `<div class="avatar">${p.name.charAt(0).toUpperCase()}</div><div class="pname">${p.name}</div>`;
+      list.appendChild(row);
+    });
+  }
+
+  startBtn.disabled = players.length < 1;
+  startBtn.style.opacity = players.length < 1 ? '0.4' : '1';
+  hint.textContent = players.length < 1 ? 'Waiting for at least 1 player…' : `${players.length} player${players.length !== 1 ? 's' : ''} ready — tap to start!`;
+}
+
+// ---------- Game screen: state ----------
+function renderGameState(state) {
+  document.getElementById('remainingText').textContent = `${state.remainingCount} numbers remaining`;
+
+  const historyRow = document.getElementById('historyRow');
+  historyRow.innerHTML = '';
+  state.drawn.forEach((n, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (i === state.drawn.length - 1 ? ' latest' : '');
+    chip.textContent = letterFor(n) + n;
+    historyRow.appendChild(chip);
+  });
+
+  ['line1', 'line2', 'fullHouse'].forEach(tier => {
+    const el = document.querySelector(`.tier[data-tier="${tier}"]`);
+    const winner = state.winners[tier];
+    if (winner) {
+      el.classList.add('won');
+      el.querySelector('.winner-name').textContent = '🏆 ' + winner.name;
+    } else {
+      el.classList.remove('won');
+      el.querySelector('.winner-name').textContent = '—';
+    }
+  });
+
+  checkForNewWins(state.winners);
+
+  const playerList = document.getElementById('playerList');
+  playerList.innerHTML = '';
+  state.players.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `
+      <span class="name">${p.name}${p.fullHouse ? ' 🏆' : ''}</span>
+      <span class="progress-dots">
+        ${[0,1,2,3,4].map(i => `<span class="dot ${i < Math.min(p.lines, 5) ? 'on' : ''}"></span>`).join('')}
+      </span>
+      <span class="dim" style="font-size:12px;">${p.markedCount}/25 marked</span>
+    `;
+    playerList.appendChild(row);
+  });
+}
+
+// ---------- SSE handler ----------
+function handleState(state) {
+  if (!state.active && state.status === 'lobby') {
+    // In lobby: update player list
+    renderLobbyPlayers(state.players || []);
+    return;
+  }
+  if (state.active) {
+    // Game is running: switch to game screen if not already there
+    if (document.getElementById('gameScreen').style.display === 'none') {
+      showGameScreen();
+      knownWinners = { ...state.winners };
+      winnersBaselineSet = true;
+    }
+    renderGameState(state);
+  }
+}
+
+// ---------- Buttons ----------
+document.getElementById('openLobbyBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('openLobbyBtn');
+  btn.disabled = true;
+  btn.textContent = 'Opening…';
+  const res = await fetch('/api/game/open', { method: 'POST' });
+  const data = await res.json();
+  btn.disabled = false;
+  btn.textContent = 'Open Lobby';
+  if (!res.ok) { showToast(data.error || 'Something went wrong.'); return; }
+  localStorage.setItem('bingoAdminGameId', data.gameId);
+  localStorage.setItem('bingoAdminCode', data.joinCode);
+  knownWinners = { line1: null, line2: null, fullHouse: null };
+  winnersBaselineSet = false;
+  showLobbyScreen(data.joinCode);
+});
+
+document.getElementById('startGameBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('startGameBtn');
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  const res = await fetch('/api/game/start', { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) {
+    btn.disabled = false;
+    btn.textContent = 'Start Game';
+    showToast(data.error || 'Could not start game.');
+    return;
+  }
+  knownWinners = { ...data.state.winners };
+  winnersBaselineSet = true;
+  showGameScreen();
+  renderGameState(data.state);
+});
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  if (!confirm('Start a brand new game? This clears all tickets and progress.')) return;
+  await fetch('/api/game/reset', { method: 'POST' });
+  localStorage.removeItem('bingoAdminGameId');
+  localStorage.removeItem('bingoAdminCode');
+  currentJoinCode = null;
+  document.getElementById('setupScreen').style.display = 'block';
+  document.getElementById('lobbyScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('resetWrap').style.display = 'none';
+  document.getElementById('gameOverBanner').classList.remove('show');
+  document.getElementById('gameOverBannerGame').classList.remove('show');
+});
+
+document.getElementById('drawBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('drawBtn');
+  btn.disabled = true;
+  const [res] = await Promise.all([
+    fetch('/api/draw', { method: 'POST' }),
+    playBowlDraw(),
+  ]);
+  const data = await res.json();
+  btn.disabled = false;
+  if (data.number == null) {
+    showToast('All 75 numbers have been called!');
+    return;
+  }
+  const ball = document.getElementById('ballDisplay');
+  ball.style.animation = 'none';
+  requestAnimationFrame(() => {
+    ball.style.animation = '';
+    ball.textContent = letterFor(data.number) + '-' + data.number;
+  });
+});
+
+// ---------- Initial load ----------
+async function init() {
+  const res = await fetch('/api/game/state');
+  const state = await res.json();
+
+  if (!state.active && !state.status) {
+    // No game at all — show setup
+    return;
+  }
+
+  const storedGameId = localStorage.getItem('bingoAdminGameId');
+  const storedCode = localStorage.getItem('bingoAdminCode');
+
+  if (state.status === 'lobby') {
+    const code = (storedGameId === state.id) ? storedCode : null;
+    currentJoinCode = code;
+    showLobbyScreen(code);
+    renderLobbyPlayers(state.players || []);
+  } else if (state.active) {
+    const code = (storedGameId === state.id) ? storedCode : null;
+    currentJoinCode = code;
+    showGameScreen();
+    knownWinners = { ...state.winners };
+    winnersBaselineSet = true;
+    renderGameState(state);
+    if (state.winners.fullHouse) showGameOver();
+  }
+}
+
+function connectEvents() {
+  const es = new EventSource('/api/events');
+  es.onmessage = (e) => {
+    const state = JSON.parse(e.data);
+    handleState(state);
+  };
+  es.onerror = () => { /* browser auto-reconnects */ };
+}
+
+init();
+connectEvents();
+</script>
+</body>
+</html>

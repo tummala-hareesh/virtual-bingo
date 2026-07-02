@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: family-bingo
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: echo "No build needed - zero dependencies"
+    startCommand: node server.js
+    healthCheckPath: /
+    autoDeploy: true

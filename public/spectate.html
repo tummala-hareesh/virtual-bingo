@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Virtual Bingo — Spectate</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  body { overflow: hidden; }
+
+  .spectate-wrap {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    height: 100dvh;
+    padding: 24px 32px;
+    gap: 20px;
+    max-width: none;
+  }
+
+  /* Top bar */
+  .spec-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .spec-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(20px, 3vw, 32px);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .spec-last-ball {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .spec-ball {
+    width: clamp(60px, 8vw, 100px);
+    height: clamp(60px, 8vw, 100px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(20px, 3vw, 36px);
+    color: var(--bg);
+    background: radial-gradient(circle at 32% 28%, #fff 0%, var(--yellow) 34%, var(--tangerine) 100%);
+    box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px var(--line), 0 12px 30px -8px var(--pink-glow);
+    flex-shrink: 0;
+  }
+  .spec-ball.idle {
+    background: var(--surface-2);
+    color: var(--text-dim);
+    box-shadow: none;
+  }
+  .spec-meta {
+    text-align: right;
+  }
+  .spec-meta .remaining {
+    font-family: var(--font-mono);
+    font-size: clamp(12px, 1.5vw, 16px);
+    color: var(--text-dim);
+  }
+  .spec-meta .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: clamp(11px, 1.2vw, 14px);
+    color: var(--teal);
+    margin-top: 4px;
+  }
+
+  /* Player grid */
+  .player-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(220px, 22vw, 340px), 1fr));
+    gap: clamp(10px, 1.5vw, 20px);
+    align-content: start;
+    overflow-y: auto;
+  }
+
+  .spec-player-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: clamp(12px, 1.5vw, 20px);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+  .spec-player-card.has-line { border-color: var(--teal); }
+  .spec-player-card.has-fullhouse { border-color: var(--yellow); background: #1e1a08; }
+
+  .spec-player-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(15px, 2vw, 22px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .spec-player-name .trophy { font-size: 0.9em; }
+
+  /* Progress bar */
+  .progress-track {
+    background: var(--bg-soft);
+    border-radius: 999px;
+    height: clamp(8px, 1vw, 14px);
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--teal), var(--violet));
+    transition: width 0.6s cubic-bezier(.34,1.4,.64,1);
+    min-width: 4px;
+  }
+  .spec-player-card.has-fullhouse .progress-fill {
+    background: linear-gradient(90deg, var(--yellow), var(--tangerine));
+  }
+
+  .spec-player-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: clamp(10px, 1.1vw, 13px);
+    color: var(--text-dim);
+  }
+
+  .lines-pip {
+    display: flex;
+    gap: 4px;
+  }
+  .lines-pip span {
+    width: clamp(6px, 0.8vw, 10px);
+    height: clamp(6px, 0.8vw, 10px);
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .lines-pip span.lit { background: var(--teal); }
+  .spec-player-card.has-fullhouse .lines-pip span.lit { background: var(--yellow); }
+
+  /* Prize row */
+  .spec-prizes {
+    display: flex;
+    gap: clamp(8px, 1vw, 16px);
+    flex-wrap: wrap;
+  }
+  .spec-prize {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: clamp(8px, 1vw, 14px) clamp(12px, 1.5vw, 20px);
+    flex: 1;
+    min-width: 120px;
+  }
+  .spec-prize .prize-label {
+    font-family: var(--font-mono);
+    font-size: clamp(10px, 1vw, 12px);
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .spec-prize .prize-winner {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(14px, 1.8vw, 20px);
+    margin-top: 4px;
+    color: var(--text-dim);
+  }
+  .spec-prize.won { border-color: var(--yellow); }
+  .spec-prize.won .prize-winner { color: var(--yellow); }
+
+  /* Waiting overlay */
+  .waiting-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    height: 100dvh;
+    text-align: center;
+    gap: 20px;
+  }
+  .waiting-overlay .big-ball {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+    animation: lobby-float 3s ease-in-out infinite;
+  }
+  @keyframes lobby-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  /* History strip */
+  .spec-history {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .spec-chip {
+    width: clamp(32px, 3.5vw, 48px);
+    height: clamp(32px, 3.5vw, 48px);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: clamp(9px, 1vw, 13px);
+    color: var(--text-dim);
+  }
+  .spec-chip.latest {
+    background: var(--pink); color: #fff;
+    border-color: var(--pink); font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<!-- Waiting for game -->
+<div id="waitingScreen" class="waiting-overlay">
+  <div class="big-ball">🎱</div>
+  <h1 style="font-size:clamp(24px,4vw,42px);">Virtual Bingo</h1>
+  <p class="dim" style="font-size:clamp(14px,1.8vw,20px);">Waiting for the game to start…</p>
+  <p class="dim" style="font-size:clamp(12px,1.2vw,15px); opacity:0.6;">This screen will update automatically.</p>
+</div>
+
+<!-- Active game view -->
+<div id="activeScreen" class="wrap spectate-wrap" style="display:none;">
+
+  <!-- Top bar -->
+  <div class="spec-topbar">
+    <div class="spec-title">
+      <span class="dot"></span>
+      Virtual Bingo
+    </div>
+    <div class="spec-last-ball">
+      <div class="spec-ball idle" id="specBall">–</div>
+      <div>
+        <div style="font-family:var(--font-mono); font-size:clamp(11px,1.2vw,14px); color:var(--text-dim);" id="specBallLabel">Waiting for first call</div>
+        <div class="spec-history mt-16" id="specHistory" style="margin-top:8px;"></div>
+      </div>
+    </div>
+    <div class="spec-meta">
+      <div class="remaining" id="specRemaining">75 remaining</div>
+      <div class="status-badge"><span class="pulse-dot"></span> Live</div>
+    </div>
+  </div>
+
+  <!-- Player cards -->
+  <div class="player-grid" id="specPlayerGrid"></div>
+
+  <!-- Prize footer -->
+  <div class="spec-prizes" id="specPrizes">
+    <div class="spec-prize" id="prizeL1">
+      <div class="prize-label">1 Line</div>
+      <div class="prize-winner">—</div>
+    </div>
+    <div class="spec-prize" id="prizeL2">
+      <div class="prize-label">2 Lines</div>
+      <div class="prize-winner">—</div>
+    </div>
+    <div class="spec-prize" id="prizeFH">
+      <div class="prize-label">Full House</div>
+      <div class="prize-winner">—</div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--teal); display: inline-block;
+    animation: dot-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+</style>
+
+<script>
+const LETTERS = { B: [1,15], I: [16,30], N: [31,45], G: [46,60], O: [61,75] };
+function letterFor(n) {
+  for (const [letter, [lo, hi]] of Object.entries(LETTERS)) {
+    if (n >= lo && n <= hi) return letter;
+  }
+  return '';
+}
+
+function renderState(state) {
+  if (!state.active) {
+    document.getElementById('waitingScreen').style.display = 'flex';
+    document.getElementById('activeScreen').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('waitingScreen').style.display = 'none';
+  document.getElementById('activeScreen').style.display = 'grid';
+
+  // Ball display
+  const ball = document.getElementById('specBall');
+  const ballLabel = document.getElementById('specBallLabel');
+  if (state.lastNumber) {
+    ball.textContent = letterFor(state.lastNumber) + '-' + state.lastNumber;
+    ball.classList.remove('idle');
+    ballLabel.textContent = 'Last called';
+  } else {
+    ball.textContent = '–';
+    ball.classList.add('idle');
+    ballLabel.textContent = 'Waiting for first call';
+  }
+
+  // Remaining
+  document.getElementById('specRemaining').textContent = `${state.remainingCount} remaining`;
+
+  // History strip (last 15)
+  const history = document.getElementById('specHistory');
+  history.innerHTML = '';
+  const recent = state.drawn.slice(-15);
+  recent.forEach((n, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'spec-chip' + (i === recent.length - 1 ? ' latest' : '');
+    chip.textContent = letterFor(n) + n;
+    history.appendChild(chip);
+  });
+
+  // Prize footer
+  const prizes = { line1: 'prizeL1', line2: 'prizeL2', fullHouse: 'prizeFH' };
+  Object.entries(prizes).forEach(([tier, id]) => {
+    const el = document.getElementById(id);
+    const w = state.winners[tier];
+    el.classList.toggle('won', !!w);
+    el.querySelector('.prize-winner').textContent = w ? '🏆 ' + w.name : '—';
+  });
+
+  // Player cards — sort by progress (markedCount desc), fullHouse winners first
+  const sorted = [...state.players].sort((a, b) => {
+    if (b.fullHouse !== a.fullHouse) return b.fullHouse - a.fullHouse;
+    if (b.lines !== a.lines) return b.lines - a.lines;
+    return b.markedCount - a.markedCount;
+  });
+
+  const grid = document.getElementById('specPlayerGrid');
+  // Reconcile DOM to avoid flickering — update existing cards in place
+  const existing = new Map(Array.from(grid.querySelectorAll('[data-player-id]')).map(el => [el.dataset.playerId, el]));
+
+  sorted.forEach((p, idx) => {
+    let card = existing.get(p.id);
+    if (!card) {
+      card = document.createElement('div');
+      card.className = 'spec-player-card';
+      card.dataset.playerId = p.id;
+      card.innerHTML = `
+        <div class="spec-player-name"><span class="pname"></span><span class="trophy"></span></div>
+        <div class="progress-track"><div class="progress-fill"></div></div>
+        <div class="spec-player-stats">
+          <div class="lines-pip">
+            ${[0,1,2,3,4,5,6].map(i => `<span data-pip="${i}"></span>`).join('')}
+          </div>
+          <span class="marked-count"></span>
+        </div>
+      `;
+    }
+
+    // Update values
+    card.querySelector('.pname').textContent = p.name;
+    card.querySelector('.trophy').textContent = p.fullHouse ? ' 🏆' : p.lines >= 2 ? ' 🎉' : '';
+    card.classList.toggle('has-line', p.lines > 0 && !p.fullHouse);
+    card.classList.toggle('has-fullhouse', p.fullHouse);
+
+    const pct = Math.round((p.markedCount / 25) * 100);
+    card.querySelector('.progress-fill').style.width = pct + '%';
+    card.querySelector('.marked-count').textContent = `${p.markedCount}/25`;
+
+    card.querySelectorAll('[data-pip]').forEach(pip => {
+      const i = parseInt(pip.dataset.pip);
+      pip.classList.toggle('lit', i < Math.min(p.lines, 7));
+    });
+
+    if (!existing.has(p.id)) grid.appendChild(card);
+    existing.delete(p.id);
+  });
+
+  // Remove cards for players no longer in the game
+  existing.forEach(el => el.remove());
+}
+
+const es = new EventSource('/api/events');
+es.onmessage = (e) => {
+  renderState(JSON.parse(e.data));
+};
+
+// Initial load
+fetch('/api/game/state').then(r => r.json()).then(renderState);
+</script>
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Virtual Bingo — My Ticket</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="wrap" style="max-width:520px;">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span><span id="playerName">Player</span></div>
+    <a href="/join" class="pill" style="text-decoration:none;">Switch player</a>
+  </div>
+
+  <div id="notFound" class="card center" style="display:none;">
+    <p>We couldn't find your ticket.</p>
+    <a href="/join" class="btn secondary mt-16" style="display:inline-block;">Pick your name again</a>
+  </div>
+
+  <div id="gameArea" style="display:none;">
+    <p class="center dim" style="font-size:14px; margin-bottom:4px;">👉 Tap a number on your card when it gets called!</p>
+
+    <div class="card center">
+      <span class="eyebrow" id="lastCalledLabel">Waiting for the first call...</span>
+      <div class="bowl-wrap">
+        <div class="bowl" id="bowl"></div>
+      </div>
+      <div class="ball-stage" style="padding:14px 0;">
+        <div class="ball" id="ballDisplay">–</div>
+      </div>
+      <div class="history-row" id="historyRow"></div>
+    </div>
+
+    <!-- Auto-detected claim banner: appears only when a prize is actually earned -->
+    <div class="claim-banner" id="claimBanner">
+      <span class="msg" id="claimMsg">🎉 You got one!</span>
+      <span class="tap-hint">TAP TO CLAIM →</span>
+    </div>
+
+    <div class="mt-24">
+      <div class="ticket">
+        <div class="ticket-header">
+          <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
+        </div>
+        <div class="ticket-grid" id="ticketGrid"></div>
+      </div>
+    </div>
+
+    <div class="card mt-24 center" id="statusCard">
+      <span class="eyebrow">Prizes so far</span>
+      <div class="tier-row" id="tierRow">
+        <div class="tier" data-tier="line1"><div class="label">1 LINE</div><div class="winner-name">—</div></div>
+        <div class="tier" data-tier="line2"><div class="label">2 LINES</div><div class="winner-name">—</div></div>
+        <div class="tier" data-tier="fullHouse"><div class="label">FULL HOUSE</div><div class="winner-name">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="celebrate-overlay" id="celebrateOverlay">
+    <div class="celebrate-card">
+      <div class="big-emoji" id="celebrateEmoji">🏆</div>
+      <h2 id="celebrateTitle">Winner!</h2>
+      <p id="celebrateSub">Tap anywhere to continue</p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const playerId = localStorage.getItem('bingoPlayerId');
+const playerName = localStorage.getItem('bingoPlayerName');
+const CACHE_KEY = 'bingoTicketCache';
+
+if (!playerId) {
+  location.href = '/join';
+}
+
+document.getElementById('playerName').textContent = playerName || 'Player';
+
+const toast = document.getElementById('toast');
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+const LETTERS = { B: [1,15], I: [16,30], N: [31,45], G: [46,60], O: [61,75] };
+function letterFor(n) {
+  for (const [letter, [lo, hi]] of Object.entries(LETTERS)) {
+    if (n >= lo && n <= hi) return letter;
+  }
+  return '';
+}
+
+// ---------- Bowl of numbers (decorative + shake on new draw) ----------
+const BALL_COLORS = ['#FF3D81', '#FFD23F', '#00D9C0', '#FF7A3D', '#8B5CF6', '#00A8E0'];
+function setupBowl() {
+  const bowl = document.getElementById('bowl');
+  bowl.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const ball = document.createElement('span');
+    ball.className = 'mini-ball';
+    ball.style.left = (8 + Math.random() * 150) + 'px';
+    ball.style.top = (30 + Math.random() * 55) + 'px';
+    ball.style.background = `radial-gradient(circle at 30% 25%, #fff, ${BALL_COLORS[i % BALL_COLORS.length]} 60%)`;
+    ball.style.animationDelay = (Math.random() * 1.6) + 's';
+    bowl.appendChild(ball);
+  }
+}
+function shakeBowl() {
+  const bowl = document.getElementById('bowl');
+  bowl.classList.add('shaking');
+  setTimeout(() => bowl.classList.remove('shaking'), 500);
+}
+
+// ---------- Celebration overlay (broadcast to every player + admin) ----------
+const celebrateOverlay = document.getElementById('celebrateOverlay');
+celebrateOverlay.addEventListener('click', () => celebrateOverlay.classList.remove('show'));
+
+const TIER_INFO = {
+  line1: { emoji: '🎉', title: (n) => `${n} got a Line!`, confettiCount: 40 },
+  line2: { emoji: '🎉🎉', title: (n) => `${n} got 2 Lines!`, confettiCount: 55 },
+  fullHouse: { emoji: '🏆', title: (n) => `${n} got FULL HOUSE!`, confettiCount: 90 },
+};
+
+function celebrateBroadcast(tier, name) {
+  const info = TIER_INFO[tier];
+  if (!info) return;
+  document.getElementById('celebrateEmoji').textContent = info.emoji;
+  document.getElementById('celebrateTitle').textContent = info.title(name);
+  document.getElementById('celebrateSub').textContent = tier === 'fullHouse' ? 'Game over — tap to continue' : 'Tap anywhere to continue';
+  celebrateOverlay.classList.add('show');
+  burstConfetti(info.confettiCount);
+  clearTimeout(window.__celebrateTimer);
+  window.__celebrateTimer = setTimeout(() => celebrateOverlay.classList.remove('show'), 3400);
+}
+
+// Tracks last known winners so we only celebrate genuinely new wins, not
+// ones that already existed when this screen loaded.
+let knownWinners = { line1: null, line2: null, fullHouse: null };
+let winnersBaselineSet = false;
+
+function checkForNewWins(w) {
+  if (!winnersBaselineSet) {
+    knownWinners = { ...w };
+    winnersBaselineSet = true;
+    return;
+  }
+  ['line1', 'line2', 'fullHouse'].forEach((tier) => {
+    const prev = knownWinners[tier];
+    const now = w[tier];
+    if (now && (!prev || prev.playerId !== now.playerId)) {
+      celebrateBroadcast(tier, now.name);
+    }
+  });
+  knownWinners = { ...w };
+}
+
+let ticket = null;
+let marks = new Set();
+let drawnSet = new Set();
+let drawnList = [];
+let winners = { line1: null, line2: null, fullHouse: null };
+let gameId = null;
+
+// ---------- Local browser cache (per game + player) ----------
+function readCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function writeCache() {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      gameId, playerId, name: playerName,
+      ticket, marks: Array.from(marks), drawn: drawnList, winners,
+    }));
+  } catch { /* storage full or unavailable — game still works, just won't cache */ }
+}
+
+function applyFromCache(cache) {
+  ticket = cache.ticket;
+  marks = new Set(cache.marks);
+  drawnSet = new Set(cache.drawn);
+  drawnList = cache.drawn;
+  winners = cache.winners || winners;
+  gameId = cache.gameId;
+}
+
+// ---------- Rendering ----------
+function renderTicket() {
+  const grid = document.getElementById('ticketGrid');
+  grid.innerHTML = '';
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const val = ticket[r][c];
+      const key = `${r}-${c}`;
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      if (val === 'FREE') {
+        cell.classList.add('free');
+        cell.textContent = 'FREE';
+      } else {
+        cell.textContent = val;
+        if (drawnSet.has(val) && !marks.has(key)) cell.classList.add('callable');
+      }
+      if (marks.has(key)) cell.classList.add('marked');
+      cell.addEventListener('click', () => toggleMark(r, c, val));
+      grid.appendChild(cell);
+    }
+  }
+  updateClaimBanner();
+}
+
+function countCompleteLines() {
+  let lines = 0;
+  for (let r = 0; r < 5; r++) {
+    let complete = true;
+    for (let c = 0; c < 5; c++) if (!marks.has(`${r}-${c}`)) complete = false;
+    if (complete) lines++;
+  }
+  for (let c = 0; c < 5; c++) {
+    let complete = true;
+    for (let r = 0; r < 5; r++) if (!marks.has(`${r}-${c}`)) complete = false;
+    if (complete) lines++;
+  }
+  let d1 = true, d2 = true;
+  for (let i = 0; i < 5; i++) {
+    if (!marks.has(`${i}-${i}`)) d1 = false;
+    if (!marks.has(`${i}-${4 - i}`)) d2 = false;
+  }
+  if (d1) lines++;
+  if (d2) lines++;
+  return lines;
+}
+
+function isFullHouse() {
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) if (!marks.has(`${r}-${c}`)) return false;
+  return true;
+}
+
+let pendingClaimTier = null;
+
+function updateClaimBanner() {
+  const banner = document.getElementById('claimBanner');
+  const lines = countCompleteLines();
+  const full = isFullHouse();
+
+  let tier = null;
+  let msg = '';
+  if (full && !winners.fullHouse) {
+    tier = 'fullHouse'; msg = '🏆 FULL HOUSE! You got them all!';
+  } else if (lines >= 2 && winners.line1 && !winners.line2) {
+    tier = 'line2'; msg = '🎉 Two lines! Amazing!';
+  } else if (lines >= 1 && !winners.line1) {
+    tier = 'line1'; msg = '🎉 You got a line!';
+  }
+
+  pendingClaimTier = tier;
+  if (tier) {
+    document.getElementById('claimMsg').textContent = msg;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+document.getElementById('claimBanner').addEventListener('click', () => {
+  if (pendingClaimTier) claim(pendingClaimTier);
+});
+
+async function toggleMark(r, c, val) {
+  if (val === 'FREE') return;
+  if (!drawnSet.has(val)) {
+    showToast(`${letterFor(val)}-${val} hasn't been called yet`);
+    return;
+  }
+  const key = `${r}-${c}`;
+  const res = await fetch('/api/mark', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playerId, row: r, col: c })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    marks = new Set(data.marks);
+    writeCache();
+    renderTicket();
+  }
+}
+
+function renderHistory() {
+  const last = drawnList[drawnList.length - 1];
+  document.getElementById('ballDisplay').textContent = last ? letterFor(last) + '-' + last : '–';
+  document.getElementById('lastCalledLabel').textContent = last ? 'Last called' : 'Waiting for the first call...';
+  const row = document.getElementById('historyRow');
+  row.innerHTML = '';
+  drawnList.slice(-10).forEach((n, i, arr) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (i === arr.length - 1 ? ' latest' : '');
+    chip.textContent = letterFor(n) + n;
+    row.appendChild(chip);
+  });
+}
+
+function renderTierStatus() {
+  ['line1', 'line2', 'fullHouse'].forEach(t => {
+    const el = document.querySelector(`.tier[data-tier="${t}"]`);
+    const w = winners[t];
+    if (w) {
+      el.classList.add('won');
+      el.querySelector('.winner-name').textContent = '🏆 ' + w.name;
+    } else {
+      el.classList.remove('won');
+      el.querySelector('.winner-name').textContent = '—';
+    }
+  });
+}
+
+async function claim(tier) {
+  const res = await fetch('/api/claim', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playerId, tier })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    winners = data.state.winners;
+    writeCache();
+    renderTierStatus();
+    updateClaimBanner();
+    checkForNewWins(winners);
+  } else {
+    showToast(data.error || 'Not quite yet!');
+  }
+}
+
+function burstConfetti(count = 40) {
+  const colors = BALL_COLORS;
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.width = piece.style.height = (6 + Math.random() * 6) + 'px';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    document.body.appendChild(piece);
+    const duration = 1800 + Math.random() * 1200;
+    piece.animate([
+      { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+      { transform: `translateY(100vh) rotate(${360 + Math.random()*360}deg)`, opacity: 0.9 }
+    ], { duration, easing: 'ease-in' });
+    setTimeout(() => piece.remove(), duration);
+  }
+}
+
+async function loadTicket() {
+  setupBowl();
+
+  // Instant render from cache if we have one for this player, so the UI
+  // never sits blank — then reconcile with the server, which stays the
+  // source of truth.
+  const cache = readCache();
+  if (cache && cache.playerId === playerId) {
+    applyFromCache(cache);
+    document.getElementById('gameArea').style.display = 'block';
+    renderTicket();
+    renderHistory();
+    renderTierStatus();
+  }
+
+  try {
+    const res = await fetch('/api/ticket?id=' + encodeURIComponent(playerId));
+    if (!res.ok) {
+      if (!cache) document.getElementById('notFound').style.display = 'block';
+      return;
+    }
+    const data = await res.json();
+    gameId = data.gameId;
+    ticket = data.ticket;
+    marks = new Set(data.marks);
+    drawnSet = new Set(data.drawn);
+    drawnList = data.drawn;
+    winners = data.winners || winners;
+    knownWinners = { ...winners };
+    winnersBaselineSet = true;
+    writeCache();
+    document.getElementById('gameArea').style.display = 'block';
+    renderTicket();
+    renderHistory();
+    renderTierStatus();
+  } catch (err) {
+    if (!cache) document.getElementById('notFound').style.display = 'block';
+    else showToast('Offline — showing your last saved card');
+  }
+}
+
+function connectEvents() {
+  const es = new EventSource('/api/events');
+  es.onmessage = (e) => {
+    const state = JSON.parse(e.data);
+    if (!state.active) return;
+    const isNewDraw = state.drawn.length > drawnList.length;
+    drawnSet = new Set(state.drawn);
+    drawnList = state.drawn;
+    checkForNewWins(state.winners);
+    winners = state.winners;
+    writeCache();
+    if (isNewDraw) {
+      shakeBowl();
+      setTimeout(() => renderHistory(), 350);
+    } else {
+      renderHistory();
+    }
+    renderTierStatus();
+    if (ticket) renderTicket();
+  };
+}
+
+loadTicket();
+connectEvents();
+</script>
+</body>
+</html>
