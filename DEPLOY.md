@@ -1,94 +1,171 @@
-# 🌐 Deploying Virtual Bingo for free (so mobile-only players can join too)
+# Deploying Virtual Bingo
 
-This repo is already set up for exactly one path: push to GitHub, deploy to
-Render, with GitHub Actions automatically re-deploying on every future push.
-
-## Step 1 — Create the GitHub repo
-
-1. Go to **https://github.com/new** (while logged in as `tummala-hareesh`).
-2. Repository name: `family-bingo` (or whatever you like).
-3. Leave it **Public** (Render's free tier needs this, or a paid Render plan
-   for private repos) — there's no secret data in this code, so public is fine.
-4. Don't initialize with a README (this project already has one) — leave
-   all the checkboxes unchecked.
-5. Click **Create repository**.
-6. On the next page, under **"…or push an existing repository from the
-   command line"**, run those three commands from inside the unzipped
-   `family-bingo` folder (open Terminal/Command Prompt there):
-   ```
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/tummala-hareesh/family-bingo.git
-   git push -u origin main
-   ```
-   (If `git` isn't installed, grab it free from **https://git-scm.com** first.)
-
-## Step 2 — Deploy to Render with the included Blueprint
-
-This repo includes a `render.yaml` file, which Render reads automatically to
-configure the service — no manual form-filling needed.
-
-1. Go to **https://dashboard.render.com/blueprints**
-2. Click **New Blueprint Instance**.
-3. Connect your GitHub account if prompted, then select the `family-bingo`
-   repo you just pushed.
-4. Render will detect `render.yaml` and show you the `family-bingo` web
-   service, pre-configured (free plan, no build step, `node server.js` as
-   the start command). Click **Apply**.
-5. Wait 1–2 minutes for the first deploy. You'll get a URL like:
-   `https://family-bingo-xyz.onrender.com`
-
-## Step 3 — Wire up GitHub Actions (auto-redeploy on every push)
-
-The repo already includes `.github/workflows/deploy.yml`, which pings Render
-every time you push to `main`. It just needs one secret to know *which*
-Render service to redeploy:
-
-1. On Render, open your `family-bingo` service → **Settings** → scroll to
-   **Deploy Hook** → copy that URL.
-2. On GitHub, go to your repo → **Settings** → **Secrets and variables** →
-   **Actions** → **New repository secret**.
-3. Name: `RENDER_DEPLOY_HOOK_URL`, Value: the URL you just copied. Save.
-
-That's it — from now on, any `git push` to `main` automatically redeploys.
-(Render's own GitHub integration would actually do this even without the
-Action, since `autoDeploy: true` is set in `render.yaml` — the Action is
-there because you specifically asked for GitHub Actions to drive it, and
-it's also handy for manually re-triggering a deploy from the Actions tab
-without needing a code change.)
-
-## Step 4 — Play
-
-- Open `https://family-bingo-xyz.onrender.com/admin` yourself, create the
-  game, and share the QR code / join code shown there with everyone.
-- Anyone with that link can join from any phone, on any network — no Wi-Fi
-  matching needed anymore.
-
-## Good to know
-
-- The **free tier sleeps after ~15 minutes of no traffic**. The first
-  visitor after a gap will see it load slowly (20–50 seconds) while it wakes
-  up — normal, just wait it out.
-- Since the game lives in memory, if it sleeps *mid-game*, that game's state
-  resets on wake. Keep at least one tab open and interacting during a live
-  session to avoid this.
-- To play again another day, just reopen `/admin` and create a new game —
-  the deployed app stays live indefinitely (it just sleeps between uses).
+Two options: **Render** (recommended, fully automated) or **Glitch** (no GitHub needed).
 
 ---
 
-## Alternative: Glitch.com (no GitHub/Actions needed)
+## Option A: Render + GitHub Actions (recommended)
 
-If you'd rather skip GitHub entirely:
+This repo ships with `render.yaml` (Render Blueprint) and
+`.github/workflows/deploy.yml` (GitHub Actions auto-redeploy). Once wired up,
+every `git push` to `main` automatically redeploys.
 
-1. Go to **https://glitch.com** → sign up free.
-2. **New Project** → **Import from GitHub** (if you did Step 1 above) or
-   start from **glitch-hello-node** and paste in the files manually.
-3. Glitch auto-installs and gives you a URL like `family-bingo.glitch.me`
-   immediately.
-4. Same free-tier sleep behavior applies.
+### Step 1 — Fork or clone the repo to GitHub
 
-Nothing about how the game works changes between these options — only
-where it physically runs.
+If you're reading this from a local copy:
+
+```bash
+# Inside the virtual-bingo folder
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/virtual-bingo.git
+git push -u origin main
+```
+
+The repo must be **Public** for Render's free tier. (Private repos work on paid
+Render plans.)
+
+### Step 2 — Deploy via Render Blueprint
+
+1. Go to **https://dashboard.render.com/blueprints**
+2. Click **New Blueprint Instance**
+3. Connect your GitHub account if prompted, then select the `virtual-bingo` repo
+4. Render detects `render.yaml` and shows a pre-configured web service:
+   - Plan: Free
+   - Build command: _(none)_
+   - Start command: `node server.js`
+5. Click **Apply**
+6. Wait 1–2 minutes for the first deploy
+
+You'll get a permanent URL:
+```
+https://virtual-bingo-xxxx.onrender.com
+```
+
+Bookmark this — it's your game URL forever (even across server restarts and re-deploys).
+
+### Step 3 — Wire up auto-redeploy
+
+`render.yaml` has `autoDeploy: true`, so Render already watches your GitHub repo.
+The GitHub Actions workflow is an additional trigger — useful for manually
+re-kicking a deploy from the Actions tab without a code change.
+
+To enable it:
+
+1. **On Render:** open your `virtual-bingo` service → **Settings** → scroll to
+   **Deploy Hook** → copy that URL (looks like
+   `https://api.render.com/deploy/srv-xxxxx?key=yyyy`)
+
+2. **On GitHub:** go to your repo → **Settings** → **Secrets and variables** →
+   **Actions** → **New repository secret**
+   - Name: `RENDER_DEPLOY_HOOK_URL`
+   - Value: the URL from step 1
+
+3. Click **Add secret**. Done — the next `git push` triggers both Render's own
+   watcher and the Actions workflow.
+
+### Step 4 — Verify the deployment
+
+Open a phone on **mobile data** (not your home Wi-Fi) and visit:
+```
+https://your-app.onrender.com/admin
+```
+
+- Click **"Open Lobby"** — you should see a QR code
+- The QR URL should start with `https://your-app.onrender.com`, not `192.168.x.x`
+- Scan the QR from a second device — the join page should load
+- Create a game, draw a number — confirm it appears on the second device
+
+If the QR shows a local IP address, your admin page was opened from a local
+server rather than the Render URL. Always access admin from the Render URL when
+playing over the internet.
+
+---
+
+## Free tier behaviour
+
+| Behaviour | Detail |
+|-----------|--------|
+| Sleep after idle | Server sleeps after ~15 min of no traffic |
+| Wake time | First request after sleep takes 20–50 seconds |
+| Memory on wake | In-memory game state is **lost** on sleep/restart — start a new game |
+| Preventing sleep | Keep at least one browser tab open and active during a live game |
+| Cost | Free, indefinitely — no credit card required |
+
+---
+
+## Option B: Glitch (no GitHub needed)
+
+If you'd rather skip GitHub/Render entirely:
+
+1. Go to **https://glitch.com** → create a free account
+2. Click **New Project** → **Import from GitHub** (paste your repo URL) — or
+   start from the `glitch-hello-node` template and drag-and-drop the files in
+3. Glitch starts the server automatically and gives you a URL like
+   `https://virtual-bingo.glitch.me`
+4. Share that URL as the join link
+
+Same free-tier sleep behaviour as Render applies. Glitch is simpler to set up
+but has less control over the environment.
+
+---
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `4590` | Port the server listens on (Render sets this automatically) |
+
+No other environment variables are required. There are no API keys, database
+URLs, or secrets needed to run the app.
+
+---
+
+## render.yaml reference
+
+```yaml
+services:
+  - type: web
+    name: virtual-bingo
+    env: node
+    plan: free
+    buildCommand: ""
+    startCommand: node server.js
+    autoDeploy: true
+```
+
+- `buildCommand: ""` — no build step needed (zero dependencies)
+- `startCommand: node server.js` — runs the server directly
+- `autoDeploy: true` — Render redeploys automatically on every push to `main`
+
+---
+
+## GitHub Actions reference
+
+`.github/workflows/deploy.yml` sends a POST request to the Render deploy hook
+URL on every push to `main`. It requires the `RENDER_DEPLOY_HOOK_URL` repository
+secret (see Step 3 above).
+
+This is a belt-and-suspenders setup alongside Render's own auto-deploy — useful
+for manually triggering a redeploy from the GitHub Actions tab without needing
+to push a code change.
+
+---
+
+## Local development
+
+```bash
+node server.js
+# Admin: http://localhost:4590/admin
+# Players: http://localhost:4590/join
+# Spectate: http://localhost:4590/spectate
+```
+
+For LAN play (same Wi-Fi), use the IP address printed in the console instead of
+`localhost` — players on other devices can't reach `localhost` on your machine.
+
+```bash
+PORT=8080 node server.js   # custom port if 4590 is in use
+```
