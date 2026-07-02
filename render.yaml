@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: family-bingo
+    name: virtual-bingo
     runtime: node
     plan: free
     branch: main

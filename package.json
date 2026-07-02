@@ -1,7 +1,7 @@
 {
-  "name": "family-bingo",
+  "name": "virtual-bingo",
   "version": "1.0.0",
-  "description": "Bingo game for family and friends. Zero dependencies — works local-network or deployed free.",
+  "description": "Real-time multiplayer bingo. Zero dependencies — runs local-network or deployed free on Render.",
   "main": "server.js",
   "engines": {
     "node": ">=18"
