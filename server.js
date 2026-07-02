@@ -186,6 +186,7 @@ const ROUTES = {
   '/join': '/join.html',
   '/player': '/player.html',
   '/spectate': '/spectate.html',
+  '/guide': '/guide.html',
 };
 
 function serveStatic(req, res, pathname) {

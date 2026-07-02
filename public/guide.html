@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Virtual Bingo — How to Play</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  body { overflow-x: hidden; }
+
+  /* Guide layout */
+  .guide-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 100px;
+    position: relative; z-index: 1;
+  }
+
+  /* Hero */
+  .guide-hero {
+    text-align: center;
+    padding: 48px 0 56px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 56px;
+  }
+  .guide-hero h1 { font-size: clamp(32px, 6vw, 52px); }
+  .guide-hero p { font-size: 18px; color: var(--text-dim); margin-top: 12px; max-width: 560px; margin-left: auto; margin-right: auto; }
+
+  /* Role tabs */
+  .role-nav {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin: 32px 0 0;
+    flex-wrap: wrap;
+  }
+  .role-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    border: 2px solid var(--line);
+    color: var(--text-dim);
+    transition: all 0.15s ease;
+  }
+  .role-pill.admin { border-color: var(--pink); color: var(--pink); background: rgba(255,61,129,0.08); }
+  .role-pill.player { border-color: var(--teal); color: var(--teal); background: rgba(0,217,192,0.08); }
+  .role-pill.spectate { border-color: var(--violet); color: var(--violet); background: rgba(139,92,246,0.08); }
+
+  /* Section headers */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-top: 64px;
+  }
+  .section-header .role-badge {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .role-badge.admin { background: rgba(255,61,129,0.15); color: var(--pink); }
+  .role-badge.player { background: rgba(0,217,192,0.15); color: var(--teal); }
+  .role-badge.spectate { background: rgba(139,92,246,0.15); color: var(--violet); }
+  .section-header h2 { font-size: clamp(22px, 4vw, 32px); margin: 0; }
+
+  /* Steps */
+  .step {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+    margin-bottom: 56px;
+    padding-bottom: 56px;
+    border-bottom: 1px solid var(--line);
+  }
+  .step:last-of-type { border-bottom: none; }
+  .step.reverse { direction: rtl; }
+  .step.reverse > * { direction: ltr; }
+  @media (max-width: 640px) {
+    .step, .step.reverse { grid-template-columns: 1fr; direction: ltr; }
+  }
+
+  .step-text {}
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+  .step-num.admin { background: var(--pink); color: #fff; }
+  .step-num.player { background: var(--teal); color: #06222a; }
+  .step-num.spectate { background: var(--violet); color: #fff; }
+
+  .step-text h3 { font-size: 20px; margin: 0 0 10px; }
+  .step-text p { color: var(--text-dim); font-size: 15px; line-height: 1.6; margin: 0 0 10px; }
+  .step-text ul { color: var(--text-dim); font-size: 14px; line-height: 1.8; padding-left: 20px; margin: 10px 0 0; }
+  .step-text li { margin-bottom: 4px; }
+  .step-text .tip {
+    display: flex; gap: 10px;
+    background: var(--bg-soft);
+    border-left: 3px solid var(--teal);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 12px;
+  }
+
+  /* Screen mockups */
+  .mockup {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lift);
+  }
+  .mockup-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mockup-url {
+    flex: 1;
+    background: var(--bg-soft);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .mockup-body { padding: 20px; }
+
+  /* Mini topbar inside mockup */
+  .m-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .m-brand { font-family: var(--font-display); font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .m-brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pink); }
+  .m-btn-sm {
+    font-family: var(--font-display); font-weight: 700; font-size: 11px;
+    background: var(--surface-2); color: var(--text-dim);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 10px; cursor: default;
+  }
+
+  /* Mockup card */
+  .m-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .m-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 6px;
+  }
+  .m-h { font-family: var(--font-display); font-weight: 800; font-size: 16px; margin-bottom: 6px; }
+  .m-p { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin-bottom: 10px; }
+  .m-btn {
+    display: block; width: 100%; text-align: center;
+    background: linear-gradient(135deg, var(--yellow), var(--tangerine));
+    color: var(--bg);
+    font-family: var(--font-display); font-weight: 800; font-size: 13px;
+    border-radius: 999px; padding: 10px 0; cursor: default;
+  }
+  .m-btn.pink { background: linear-gradient(135deg, var(--pink), var(--violet)); color: #fff; }
+  .m-btn.teal { background: linear-gradient(135deg, var(--teal), #00A8E0); color: #06222a; }
+  .m-btn.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+
+  /* QR mockup */
+  .m-qr {
+    width: 90px; height: 90px;
+    background: #fff;
+    border-radius: 8px;
+    margin: 0 auto 8px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px;
+  }
+  .m-qr svg { width: 100%; height: 100%; }
+
+  /* Mini ball */
+  .m-ball-wrap { display: flex; justify-content: center; margin: 8px 0; }
+  .m-ball {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, #fff 0%, var(--yellow) 34%, var(--tangerine) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 800; font-size: 18px;
+    color: var(--bg);
+    box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--line);
+  }
+
+  /* Mini ticket */
+  .m-ticket {
+    background: linear-gradient(160deg, #FFFDF6, #FFF3D6);
+    border-radius: 12px;
+    padding: 10px;
+  }
+  .m-ticket-header {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 4px;
+  }
+  .m-ticket-header span {
+    text-align: center; font-family: var(--font-display); font-weight: 800;
+    font-size: 10px; color: var(--violet);
+  }
+  .m-ticket-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+  .m-cell {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 5px; background: #fff; border: 1px solid #EFE1B8;
+    font-family: var(--font-display); font-weight: 700; font-size: 8px; color: #2A1A63;
+  }
+  .m-cell.free { background: linear-gradient(135deg, var(--teal), #00A8E0); color: #06222a; font-size: 6px; }
+  .m-cell.marked {
+    background: linear-gradient(135deg, var(--pink), var(--violet));
+    color: #fff; font-size: 9px;
+  }
+  .m-cell.callable { box-shadow: 0 0 0 2px var(--yellow); }
+
+  /* Lobby player chips */
+  .m-lobby-player {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 8px;
+    background: var(--bg-soft); margin-bottom: 6px;
+  }
+  .m-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 800; font-size: 10px; color: #fff;
+  }
+  .m-pname { font-family: var(--font-display); font-weight: 700; font-size: 11px; }
+
+  /* Player progress row */
+  .m-player-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 8px; background: var(--bg-soft); margin-bottom: 6px;
+  }
+  .m-player-row .name { font-family: var(--font-display); font-weight: 700; font-size: 11px; }
+  .m-dots { display: flex; gap: 3px; }
+  .m-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+  .m-dot.on { background: var(--teal); }
+  .m-dim { font-size: 9px; color: var(--text-dim); }
+
+  /* Claim banner mockup */
+  .m-claim-banner {
+    background: linear-gradient(135deg, var(--yellow), var(--tangerine));
+    color: var(--bg);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 8px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .m-claim-banner .msg { font-family: var(--font-display); font-weight: 800; font-size: 11px; }
+  .m-claim-banner .hint { font-size: 9px; opacity: 0.75; }
+
+  /* Celebrate mockup */
+  .m-celebrate {
+    background: linear-gradient(135deg, var(--pink), var(--violet));
+    border-radius: 12px; padding: 16px; text-align: center;
+  }
+  .m-celebrate .emoji { font-size: 28px; }
+  .m-celebrate h4 { font-family: var(--font-display); font-weight: 800; font-size: 14px; margin: 6px 0 4px; color: #fff; }
+  .m-celebrate p { font-size: 10px; color: #ffffffcc; margin: 0; }
+
+  /* Tier row mockup */
+  .m-tier-row { display: flex; gap: 6px; margin-top: 8px; }
+  .m-tier {
+    flex: 1; background: var(--bg-soft); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px; text-align: center;
+  }
+  .m-tier .label { font-family: var(--font-mono); font-size: 8px; color: var(--text-dim); }
+  .m-tier .winner { font-family: var(--font-display); font-weight: 700; font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+  .m-tier.won { border-color: var(--yellow); }
+  .m-tier.won .winner { color: var(--yellow); }
+
+  /* Spectate player card mockup */
+  .m-spec-card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px; margin-bottom: 6px;
+  }
+  .m-spec-card.has-line { border-color: var(--teal); }
+  .m-spec-name { font-family: var(--font-display); font-weight: 800; font-size: 12px; margin-bottom: 6px; }
+  .m-progress-track { background: var(--bg-soft); border-radius: 999px; height: 8px; overflow: hidden; margin-bottom: 4px; }
+  .m-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--teal), var(--violet)); }
+  .m-spec-stats { display: flex; align-items: center; justify-content: space-between; }
+
+  /* History chips */
+  .m-history { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .m-chip {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); border: 1px solid var(--line);
+    font-family: var(--font-mono); font-size: 7px; color: var(--text-dim);
+  }
+  .m-chip.latest { background: var(--pink); color: #fff; border-color: var(--pink); font-weight: 700; }
+
+  /* Input mockup */
+  .m-input {
+    width: 100%; background: var(--bg-soft); border: 2px solid var(--pink);
+    border-radius: 8px; padding: 8px 12px;
+    font-family: var(--font-mono); font-size: 16px; color: var(--text);
+    text-align: center; letter-spacing: 0.15em; margin: 8px 0;
+    box-sizing: border-box;
+  }
+  .m-input.name-input { font-family: var(--font-body); font-size: 14px; text-align: left; letter-spacing: 0; }
+  .m-label { font-size: 10px; color: var(--text-dim); font-weight: 600; }
+
+  /* Pulse dot */
+  .pulse-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--teal);
+    display: inline-block; animation: dot-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+
+  /* Separator */
+  .guide-divider {
+    border: none; border-top: 1px solid var(--line);
+    margin: 0 0 0;
+  }
+
+  /* Code snippet */
+  .m-code {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--teal);
+    margin: 8px 0;
+  }
+
+  /* QR svg pattern */
+  .qr-pattern rect { fill: #150E2E; }
+</style>
+</head>
+<body>
+<div class="guide-wrap">
+
+  <!-- Hero -->
+  <div class="guide-hero">
+    <div class="ball-stage" style="padding:0 0 16px;">
+      <div class="ball" style="width:80px;height:80px;font-size:28px;animation:none;">75</div>
+    </div>
+    <h1>How to Play Virtual Bingo</h1>
+    <p>A complete guide for hosts and players — no app download, no account, works on any phone.</p>
+    <div class="role-nav">
+      <a href="#admin" class="role-pill admin">🎙 Admin (Host)</a>
+      <a href="#player" class="role-pill player">🎯 Player</a>
+      <a href="#spectate" class="role-pill spectate">📺 Spectate</a>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--  ADMIN SECTION                                               -->
+  <!-- ============================================================ -->
+  <div id="admin">
+    <div class="section-header">
+      <span class="role-badge admin">🎙 Admin</span>
+      <h2>Running the game as Host</h2>
+    </div>
+
+    <!-- Step A1 -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num admin">1</div>
+        <h3>Open the admin page</h3>
+        <p>Visit <strong>/admin</strong> on your device — the one you'll use to run the game. This is your control center throughout the session.</p>
+        <ul>
+          <li>If playing on a <strong>local network</strong>, use the IP address printed in the terminal: <code>http://192.168.x.x:4590/admin</code></li>
+          <li>If deployed to <strong>Render</strong>, use your permanent URL: <code>https://virtual-bingo-xxxx.onrender.com/admin</code></li>
+        </ul>
+        <div class="tip">💡 Keep this tab open throughout the game — closing it doesn't end the session, but you'll need the join code to get back.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">virtual-bingo-xxxx.onrender.com/admin</div>
+        </div>
+        <div class="mockup-body">
+          <div class="m-topbar">
+            <div class="m-brand"><span class="dot"></span> Virtual Bingo <span style="color:var(--text-dim);font-size:10px;font-weight:600;">/ admin</span></div>
+          </div>
+          <div class="m-card" style="text-align:center;">
+            <div class="m-ball-wrap" style="margin:0 0 10px;">
+              <div class="m-ball" style="background:var(--surface-2);color:var(--text-dim);">75</div>
+            </div>
+            <div class="m-h">Ready to play?</div>
+            <div class="m-p">Open a lobby and share the QR code. Players join themselves — no pre-entering names needed.</div>
+            <div class="m-btn">Open Lobby</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step A2 -->
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num admin">2</div>
+        <h3>Open the lobby</h3>
+        <p>Click <strong>"Open Lobby"</strong>. A QR code and 6-character join code appear instantly. Share these with your players — they'll use it to join.</p>
+        <ul>
+          <li>The <strong>QR code</strong> links directly to the join page with the code pre-filled — scanning is all a player needs to do</li>
+          <li>The <strong>join code</strong> (e.g. <code>K3F9QX</code>) is for players who can't scan QR — they type it at <code>/join</code></li>
+          <li>Show the QR on a TV or projector using the <strong>⛶ Full screen</strong> button on the QR card</li>
+        </ul>
+        <div class="tip">💡 The QR code survives page refresh on the same browser — the join code is saved in localStorage automatically.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/admin</div>
+        </div>
+        <div class="mockup-body">
+          <div class="m-topbar">
+            <div class="m-brand"><span class="dot"></span> Virtual Bingo <span style="color:var(--text-dim);font-size:10px;font-weight:600;">/ admin</span></div>
+            <div class="m-btn-sm">Start a new game</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="m-card" style="text-align:center;">
+              <div class="m-eyebrow">Scan to join</div>
+              <div class="m-qr">
+                <!-- SVG QR-code lookalike -->
+                <svg viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+                  <rect width="21" height="21" fill="white"/>
+                  <rect x="1" y="1" width="7" height="7" fill="#150E2E" rx="1"/>
+                  <rect x="2" y="2" width="5" height="5" fill="white"/>
+                  <rect x="3" y="3" width="3" height="3" fill="#150E2E"/>
+                  <rect x="13" y="1" width="7" height="7" fill="#150E2E" rx="1"/>
+                  <rect x="14" y="2" width="5" height="5" fill="white"/>
+                  <rect x="15" y="3" width="3" height="3" fill="#150E2E"/>
+                  <rect x="1" y="13" width="7" height="7" fill="#150E2E" rx="1"/>
+                  <rect x="2" y="14" width="5" height="5" fill="white"/>
+                  <rect x="3" y="15" width="3" height="3" fill="#150E2E"/>
+                  <rect x="9" y="1" width="1" height="2" fill="#150E2E"/>
+                  <rect x="11" y="1" width="1" height="1" fill="#150E2E"/>
+                  <rect x="9" y="4" width="3" height="1" fill="#150E2E"/>
+                  <rect x="9" y="6" width="1" height="3" fill="#150E2E"/>
+                  <rect x="11" y="7" width="2" height="2" fill="#150E2E"/>
+                  <rect x="13" y="9" width="2" height="1" fill="#150E2E"/>
+                  <rect x="9" y="9" width="2" height="3" fill="#150E2E"/>
+                  <rect x="12" y="11" width="3" height="1" fill="#150E2E"/>
+                  <rect x="16" y="9" width="2" height="2" fill="#150E2E"/>
+                  <rect x="19" y="9" width="1" height="4" fill="#150E2E"/>
+                  <rect x="13" y="13" width="2" height="2" fill="#150E2E"/>
+                  <rect x="16" y="12" width="1" height="3" fill="#150E2E"/>
+                  <rect x="18" y="14" width="2" height="1" fill="#150E2E"/>
+                  <rect x="11" y="15" width="1" height="3" fill="#150E2E"/>
+                  <rect x="13" y="17" width="3" height="2" fill="#150E2E"/>
+                  <rect x="17" y="16" width="2" height="3" fill="#150E2E"/>
+                </svg>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-top:4px;">…onrender.com/join?code=K3F9QX</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:4px;">Or type: <strong style="color:var(--text);">K3F9QX</strong></div>
+            </div>
+            <div class="m-card">
+              <div class="m-eyebrow"><span class="pulse-dot"></span>&nbsp; Waiting for players</div>
+              <div style="text-align:center;color:var(--text-dim);font-size:11px;padding:16px 0;">No one yet —<br>share the QR!</div>
+              <div class="m-btn secondary" style="opacity:0.5;font-size:11px;">Start Game</div>
+              <div style="text-align:center;font-size:9px;color:var(--text-dim);margin-top:6px;">Waiting for at least 1 player…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step A3 -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num admin">3</div>
+        <h3>Watch players join in real time</h3>
+        <p>As players scan the QR and enter their names, they appear on your lobby screen instantly — no refresh needed.</p>
+        <ul>
+          <li>Each player's name pops in as they join</li>
+          <li>The player count updates live</li>
+          <li>The <strong>"Start Game"</strong> button activates once at least one player has joined</li>
+          <li>There's no maximum wait time — take as long as you need for stragglers</li>
+        </ul>
+        <div class="tip">💡 Up to 50 players can join a single game. If someone types a name that's already taken, they'll be asked to choose a different one.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/admin — Lobby</div>
+        </div>
+        <div class="mockup-body">
+          <div class="m-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div class="m-eyebrow"><span class="pulse-dot"></span>&nbsp; Waiting for players</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">4 joined</div>
+            </div>
+            <div class="m-lobby-player"><div class="m-avatar">A</div><div class="m-pname">Amma</div></div>
+            <div class="m-lobby-player"><div class="m-avatar">P</div><div class="m-pname">Priya</div></div>
+            <div class="m-lobby-player"><div class="m-avatar">R</div><div class="m-pname">Rahul</div></div>
+            <div class="m-lobby-player" style="border:1px solid var(--teal);"><div class="m-avatar" style="background:linear-gradient(135deg,var(--teal),#00A8E0);color:#06222a;">G</div><div class="m-pname">Grandma</div><span style="margin-left:auto;font-size:9px;color:var(--teal);">just joined</span></div>
+            <div class="m-btn teal" style="margin-top:10px;font-size:12px;">Start Game</div>
+            <div style="text-align:center;font-size:9px;color:var(--text-dim);margin-top:6px;">4 players ready — tap to start!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step A4 -->
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num admin">4</div>
+        <h3>Start the game and draw numbers</h3>
+        <p>Click <strong>"Start Game"</strong>. All players are immediately redirected to their bingo ticket. You're now in the draw screen.</p>
+        <ul>
+          <li>Click <strong>"🎉 Draw Number"</strong> to call the next ball — it's randomly selected from the remaining 75</li>
+          <li>The bowl animation shakes and the ball pops up with its letter prefix (e.g. <strong>N-42</strong>)</li>
+          <li>Every connected device updates within a second</li>
+          <li>The history row below shows all called numbers in order</li>
+          <li>The remaining count counts down from 75</li>
+        </ul>
+        <div class="tip">💡 Use the <strong>⛶ Full screen</strong> button on the draw card to fill a TV or projector screen with the current number — perfect for calling out loud.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/admin — Game</div>
+        </div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="m-card" style="text-align:center;">
+              <div class="m-eyebrow">Scan to join</div>
+              <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px;">Game in progress</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">…/join?code=K3F9QX</div>
+            </div>
+            <div class="m-card" style="text-align:center;">
+              <div class="m-eyebrow">Call the next number</div>
+              <div class="m-ball-wrap"><div class="m-ball">N-42</div></div>
+              <div class="m-btn" style="font-size:12px;">🎉 Draw Number</div>
+              <div style="font-size:9px;color:var(--text-dim);margin-top:6px;">33 numbers remaining</div>
+            </div>
+          </div>
+          <div class="m-card" style="margin-top:10px;">
+            <div class="m-eyebrow">Called so far</div>
+            <div class="m-history">
+              <div class="m-chip">B7</div><div class="m-chip">O61</div><div class="m-chip">I22</div>
+              <div class="m-chip">G48</div><div class="m-chip">B3</div><div class="m-chip">O72</div>
+              <div class="m-chip">I19</div><div class="m-chip latest">N42</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step A5 -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num admin">5</div>
+        <h3>Track prizes and player progress</h3>
+        <p>The admin screen shows live progress for every player and which prizes have been claimed.</p>
+        <ul>
+          <li><strong>Prizes card</strong> — shows who won 1 Line, 2 Lines, Full House</li>
+          <li><strong>Players card</strong> — each player's line count (dots) and how many squares they've marked</li>
+          <li>When a prize is claimed, a <strong>celebration overlay</strong> pops up on every screen simultaneously</li>
+          <li>Full House triggers the <strong>"Game Over"</strong> banner at the top</li>
+        </ul>
+        <div class="tip">💡 Click <strong>"Start a new game"</strong> in the top-right to reset everything and run another round.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/admin — Progress</div>
+        </div>
+        <div class="mockup-body">
+          <div class="m-card">
+            <div class="m-eyebrow">Prizes</div>
+            <div class="m-tier-row">
+              <div class="m-tier won"><div class="label">1 LINE</div><div class="winner">🏆 Priya</div></div>
+              <div class="m-tier"><div class="label">2 LINES</div><div class="winner">—</div></div>
+              <div class="m-tier"><div class="label">FULL HOUSE</div><div class="winner">—</div></div>
+            </div>
+          </div>
+          <div class="m-card" style="margin-top:10px;">
+            <div class="m-eyebrow">Players</div>
+            <div class="m-player-row">
+              <span class="name">Priya 🏆</span>
+              <div class="m-dots"><div class="m-dot on"></div><div class="m-dot on"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div></div>
+              <span class="m-dim">14/25 marked</span>
+            </div>
+            <div class="m-player-row">
+              <span class="name">Amma</span>
+              <div class="m-dots"><div class="m-dot on"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div></div>
+              <span class="m-dim">11/25 marked</span>
+            </div>
+            <div class="m-player-row">
+              <span class="name">Rahul</span>
+              <div class="m-dots"><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div></div>
+              <span class="m-dim">8/25 marked</span>
+            </div>
+            <div class="m-player-row">
+              <span class="name">Grandma</span>
+              <div class="m-dots"><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div></div>
+              <span class="m-dim">6/25 marked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /admin -->
+
+  <hr class="guide-divider" />
+
+  <!-- ============================================================ -->
+  <!--  PLAYER SECTION                                              -->
+  <!-- ============================================================ -->
+  <div id="player">
+    <div class="section-header">
+      <span class="role-badge player">🎯 Player</span>
+      <h2>Joining and playing</h2>
+    </div>
+
+    <!-- Step P1 -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num player">1</div>
+        <h3>Scan the QR code</h3>
+        <p>Point your phone camera at the QR code on the host's screen. Tap the link that appears — it opens the join page with the game code already filled in.</p>
+        <p>No QR? Visit the join URL directly and type the 6-character code when prompted:</p>
+        <div class="m-code">https://virtual-bingo-xxxx.onrender.com/join<br>— or —<br>http://192.168.x.x:4590/join</div>
+        <div class="tip">💡 No app download needed. Works in Safari, Chrome, Firefox — any modern browser on any phone.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/join?code=K3F9QX</div>
+        </div>
+        <div class="mockup-body">
+          <div style="text-align:center; margin-bottom:14px;">
+            <div style="font-family:var(--font-display);font-weight:800;font-size:18px;">Join the game</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Ask the admin for the 6-character code,<br>or scan the QR code.</div>
+          </div>
+          <div class="m-card">
+            <div class="m-label">Game code</div>
+            <div class="m-input">K3F9QX</div>
+            <div class="m-btn" style="font-size:12px;">Continue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step P2 -->
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num player">2</div>
+        <h3>Enter your name</h3>
+        <p>Type your name — this is how you appear on the scoreboard and leaderboard. No account, no email, just a name.</p>
+        <ul>
+          <li>Names are case-insensitive for uniqueness — "Grandma" and "grandma" are treated as the same</li>
+          <li>If your name is already taken, you'll be asked to pick a different one</li>
+          <li>Max 30 characters</li>
+        </ul>
+        <div class="tip">💡 Your name and player ID are saved in your browser's localStorage — refreshing the page brings you straight back to your ticket.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/join</div>
+        </div>
+        <div class="mockup-body">
+          <div style="text-align:center; margin-bottom:14px;">
+            <div style="font-family:var(--font-display);font-weight:800;font-size:18px;">What's your name?</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">This is how you'll appear on the scoreboard.</div>
+          </div>
+          <div class="m-card">
+            <div class="m-label">Your name</div>
+            <div class="m-input name-input" style="border-color:var(--pink);">Grandma█</div>
+            <div class="m-btn teal" style="margin-top:8px;font-size:12px;">Join Game</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step P3 -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num player">3</div>
+        <h3>Wait in the lobby</h3>
+        <p>After joining you'll see a waiting screen while the host finishes setting up. You can see who else has joined.</p>
+        <ul>
+          <li>The names of all joined players appear as chips</li>
+          <li>When the host clicks <strong>"Start Game"</strong>, your screen automatically switches to your bingo ticket — no manual refresh needed</li>
+        </ul>
+        <div class="tip">💡 Don't close the tab while waiting — the auto-redirect only works in the open browser tab.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/join — Lobby</div>
+        </div>
+        <div class="mockup-body">
+          <div class="m-card" style="text-align:center;">
+            <div style="font-size:32px;margin-bottom:8px;animation:none;">🎱</div>
+            <div style="font-family:var(--font-display);font-weight:800;font-size:14px;">You're in! 4 players waiting…</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Sit tight — the game will begin shortly.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px;">
+              <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-family:var(--font-display);font-weight:700;font-size:11px;">Amma</div>
+              <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-family:var(--font-display);font-weight:700;font-size:11px;">Priya</div>
+              <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-family:var(--font-display);font-weight:700;font-size:11px;">Rahul</div>
+              <div style="background:linear-gradient(135deg,var(--teal),#00A8E0);border-radius:999px;padding:5px 12px;font-family:var(--font-display);font-weight:700;font-size:11px;color:#06222a;">Grandma ✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step P4 -->
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num player">4</div>
+        <h3>Your bingo ticket</h3>
+        <p>When the game starts, your unique 5×5 ticket appears. Every player gets a different randomly-generated card.</p>
+        <ul>
+          <li>The <strong>center cell</strong> is FREE — already marked for you</li>
+          <li>Columns follow standard 75-ball ranges: B=1–15, I=16–30, N=31–45, G=46–60, O=61–75</li>
+          <li>The <strong>last called number</strong> and recent call history are shown above your ticket</li>
+          <li>Numbers you <em>can</em> mark (called but not yet marked) glow with a yellow ring</li>
+        </ul>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/player</div>
+        </div>
+        <div class="mockup-body">
+          <div class="m-topbar">
+            <div class="m-brand"><span class="dot"></span> Grandma</div>
+            <div class="m-btn-sm">Switch player</div>
+          </div>
+          <div class="m-card" style="text-align:center;">
+            <div class="m-eyebrow">Last called</div>
+            <div class="m-ball-wrap"><div class="m-ball">N-42</div></div>
+            <div class="m-history" style="justify-content:center;">
+              <div class="m-chip">B7</div><div class="m-chip">O61</div><div class="m-chip">I22</div><div class="m-chip">G48</div><div class="m-chip latest">N42</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <div class="m-ticket">
+              <div class="m-ticket-header"><span>B</span><span>I</span><span>N</span><span>G</span><span>O</span></div>
+              <div class="m-ticket-grid">
+                <div class="m-cell">7</div><div class="m-cell">22</div><div class="m-cell">38</div><div class="m-cell">48</div><div class="m-cell">61</div>
+                <div class="m-cell marked">✔</div><div class="m-cell">17</div><div class="m-cell callable">42</div><div class="m-cell">52</div><div class="m-cell">68</div>
+                <div class="m-cell">12</div><div class="m-cell">25</div><div class="m-cell free">FREE</div><div class="m-cell">55</div><div class="m-cell">70</div>
+                <div class="m-cell">4</div><div class="m-cell">29</div><div class="m-cell">33</div><div class="m-cell">46</div><div class="m-cell">64</div>
+                <div class="m-cell">14</div><div class="m-cell">20</div><div class="m-cell">44</div><div class="m-cell">59</div><div class="m-cell">73</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step P5 -->
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num player">5</div>
+        <h3>Tap squares to mark them</h3>
+        <p>When a number on your ticket is called, tap it to mark it. The server validates every tap — you can only mark numbers that have actually been drawn.</p>
+        <ul>
+          <li>Numbers with a <strong>yellow glow</strong> are called and ready to mark</li>
+          <li>Tap an already-marked square to <strong>un-mark</strong> it (toggle)</li>
+          <li>The FREE center is pre-marked and can't be toggled</li>
+          <li>Marked squares turn pink/purple with a checkmark</li>
+        </ul>
+        <div class="tip">💡 Your marks are cached in localStorage — if you refresh the page, your marks are restored instantly from the cache while the server syncs.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/player — marking</div>
+        </div>
+        <div class="mockup-body">
+          <div style="margin-top:4px;">
+            <div class="m-ticket">
+              <div class="m-ticket-header"><span>B</span><span>I</span><span>N</span><span>G</span><span>O</span></div>
+              <div class="m-ticket-grid">
+                <div class="m-cell marked">✔</div><div class="m-cell marked">✔</div><div class="m-cell marked">✔</div><div class="m-cell marked">✔</div><div class="m-cell marked">✔</div>
+                <div class="m-cell marked">✔</div><div class="m-cell">17</div><div class="m-cell marked">✔</div><div class="m-cell">52</div><div class="m-cell">68</div>
+                <div class="m-cell">12</div><div class="m-cell">25</div><div class="m-cell free">FREE</div><div class="m-cell">55</div><div class="m-cell">70</div>
+                <div class="m-cell">4</div><div class="m-cell">29</div><div class="m-cell">33</div><div class="m-cell">46</div><div class="m-cell">64</div>
+                <div class="m-cell">14</div><div class="m-cell">20</div><div class="m-cell">44</div><div class="m-cell">59</div><div class="m-cell">73</div>
+              </div>
+            </div>
+            <div class="m-claim-banner">
+              <span class="msg">🎉 You got a line!</span>
+              <span class="hint">TAP TO CLAIM →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step P6 -->
+    <div class="step reverse">
+      <div class="step-text">
+        <div class="step-num player">6</div>
+        <h3>Claim your prize</h3>
+        <p>When you complete a line (row, column, or diagonal), a pulsing <strong>claim banner</strong> appears automatically. Tap it to claim your prize.</p>
+        <ul>
+          <li><strong>1 Line</strong> — any complete row, column, or diagonal (first prize)</li>
+          <li><strong>2 Lines</strong> — a second complete line (can only claim after 1 Line is taken)</li>
+          <li><strong>Full House</strong> — all 25 squares marked</li>
+          <li>The server validates your claim — if the line isn't actually complete, the claim is rejected</li>
+          <li>Once a tier is claimed by anyone, it's gone — the banner disappears for everyone</li>
+        </ul>
+        <div class="tip">💡 A win celebration pops up on <em>every</em> player's and the admin's screen simultaneously when a prize is claimed.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/player — winner!</div>
+        </div>
+        <div class="mockup-body">
+          <div class="m-celebrate">
+            <div class="emoji">🎉</div>
+            <h4>Grandma got a Line!</h4>
+            <p>Tap anywhere to continue</p>
+          </div>
+          <div class="m-card" style="margin-top:10px;">
+            <div class="m-eyebrow">Prizes so far</div>
+            <div class="m-tier-row">
+              <div class="m-tier won"><div class="label">1 LINE</div><div class="winner">🏆 Grandma</div></div>
+              <div class="m-tier"><div class="label">2 LINES</div><div class="winner">—</div></div>
+              <div class="m-tier"><div class="label">FULL HOUSE</div><div class="winner">—</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /player -->
+
+  <hr class="guide-divider" />
+
+  <!-- ============================================================ -->
+  <!--  SPECTATE SECTION                                            -->
+  <!-- ============================================================ -->
+  <div id="spectate">
+    <div class="section-header">
+      <span class="role-badge spectate">📺 Spectate</span>
+      <h2>Live scoreboard for TV or projector</h2>
+    </div>
+
+    <div class="step">
+      <div class="step-text">
+        <div class="step-num spectate">1</div>
+        <h3>Open /spectate on any screen</h3>
+        <p>Visit <strong>/spectate</strong> on any device you want to use as a big-screen display — a TV, laptop on a projector, or a second monitor. No login required.</p>
+        <ul>
+          <li>Shows a live ranked list of every player, sorted by progress</li>
+          <li>Each player card has a <strong>progress bar</strong> (squares marked out of 25), <strong>line pips</strong>, and a trophy when they win</li>
+          <li>The last drawn number and call history appear at the top</li>
+          <li>Prizes claimed so far are shown at the bottom</li>
+          <li>Updates in real time — same SSE stream as the player view</li>
+          <li>If no game is running, shows a <strong>"Waiting for game to start"</strong> placeholder</li>
+        </ul>
+        <div class="tip">💡 The spectate page fills the full screen automatically. Open it in fullscreen mode (F11 on most browsers) for a clean TV display with no browser chrome.</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#FF5F57;"></div>
+          <div class="mockup-dot" style="background:#FFBD2E;"></div>
+          <div class="mockup-dot" style="background:#28CA41;"></div>
+          <div class="mockup-url">…/spectate</div>
+        </div>
+        <div class="mockup-body" style="padding:14px;">
+          <!-- top bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div class="m-brand"><span class="dot"></span> Virtual Bingo</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="m-ball" style="width:36px;height:36px;font-size:11px;">N-42</div>
+              <div style="font-size:9px;color:var(--text-dim);">33 remaining</div>
+              <div style="font-size:9px;color:var(--teal);display:flex;align-items:center;gap:4px;"><span class="pulse-dot"></span> Live</div>
+            </div>
+          </div>
+          <!-- player cards -->
+          <div class="m-spec-card has-line">
+            <div class="m-spec-name">Priya 🏆</div>
+            <div class="m-progress-track"><div class="m-progress-fill" style="width:60%;background:linear-gradient(90deg,var(--yellow),var(--tangerine));"></div></div>
+            <div class="m-spec-stats"><div class="m-dots" style="display:flex;gap:3px;"><div class="m-dot on"></div><div class="m-dot on"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div></div><div class="m-dim">15/25</div></div>
+          </div>
+          <div class="m-spec-card has-line">
+            <div class="m-spec-name">Grandma</div>
+            <div class="m-progress-track"><div class="m-progress-fill" style="width:52%;"></div></div>
+            <div class="m-spec-stats"><div class="m-dots" style="display:flex;gap:3px;"><div class="m-dot on"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div></div><div class="m-dim">13/25</div></div>
+          </div>
+          <div class="m-spec-card">
+            <div class="m-spec-name">Amma</div>
+            <div class="m-progress-track"><div class="m-progress-fill" style="width:44%;"></div></div>
+            <div class="m-spec-stats"><div class="m-dots" style="display:flex;gap:3px;"><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div></div><div class="m-dim">11/25</div></div>
+          </div>
+          <div class="m-spec-card">
+            <div class="m-spec-name">Rahul</div>
+            <div class="m-progress-track"><div class="m-progress-fill" style="width:32%;"></div></div>
+            <div class="m-spec-stats"><div class="m-dots" style="display:flex;gap:3px;"><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div></div><div class="m-dim">8/25</div></div>
+          </div>
+          <!-- prize footer -->
+          <div style="display:flex;gap:6px;margin-top:10px;">
+            <div class="m-tier won" style="flex:1;"><div class="label">1 LINE</div><div class="winner">🏆 Priya</div></div>
+            <div class="m-tier" style="flex:1;"><div class="label">2 LINES</div><div class="winner">—</div></div>
+            <div class="m-tier" style="flex:1;"><div class="label">FULL HOUSE</div><div class="winner">—</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /spectate -->
+
+  <!-- Quick reference -->
+  <hr class="guide-divider" style="margin-top:32px;" />
+  <div style="padding-top:48px;">
+    <h2 style="text-align:center;font-size:clamp(20px,3vw,28px);margin-bottom:32px;">Quick reference</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">
+      <div class="card">
+        <span class="eyebrow">Pages</span>
+        <div style="margin-top:12px;font-size:14px;line-height:2;">
+          <div><code style="color:var(--teal);">/admin</code> — Host controls</div>
+          <div><code style="color:var(--teal);">/join</code> — Player join flow</div>
+          <div><code style="color:var(--teal);">/player</code> — Bingo ticket</div>
+          <div><code style="color:var(--teal);">/spectate</code> — TV scoreboard</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Prize tiers</span>
+        <div style="margin-top:12px;font-size:14px;line-height:2;">
+          <div>🎉 <strong>1 Line</strong> — any row, col, diagonal</div>
+          <div>🎉🎉 <strong>2 Lines</strong> — second complete line</div>
+          <div>🏆 <strong>Full House</strong> — all 25 squares</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Ball ranges</span>
+        <div style="margin-top:12px;font-size:14px;line-height:2;font-family:var(--font-mono);">
+          <div>B — 1 to 15</div>
+          <div>I — 16 to 30</div>
+          <div>N — 31 to 45</div>
+          <div>G — 46 to 60</div>
+          <div>O — 61 to 75</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Good to know</span>
+        <div style="margin-top:12px;font-size:13px;color:var(--text-dim);line-height:1.8;">
+          <div>• Up to 50 players per game</div>
+          <div>• Game state resets on server restart</div>
+          <div>• Marks and ticket cached in browser</div>
+          <div>• Render free tier sleeps after 15 min idle</div>
+          <div>• No account needed — ever</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:56px;padding-top:32px;border-top:1px solid var(--line);">
+    <a href="/" class="btn secondary" style="text-decoration:none;display:inline-block;">← Back to home</a>
+    &nbsp;
+    <a href="/admin" class="btn" style="text-decoration:none;display:inline-block;">Open Admin →</a>
+  </div>
+
+</div>
+</body>
+</html>
