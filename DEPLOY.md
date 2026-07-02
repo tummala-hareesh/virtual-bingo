@@ -41,7 +41,7 @@ Render plans.)
 
 You'll get a permanent URL. This project is already deployed at:
 ```
-https://virtual-bingo.onrender.com
+https://virtual-bingo-pfgs.onrender.com
 ```
 
 Bookmark this — it's your game URL forever (even across server restarts and re-deploys).
@@ -70,11 +70,11 @@ To enable it:
 
 Open a phone on **mobile data** (not your home Wi-Fi) and visit:
 ```
-https://virtual-bingo.onrender.com/admin
+https://virtual-bingo-pfgs.onrender.com/admin
 ```
 
 - Click **"Open Lobby"** — you should see a QR code
-- The QR URL should start with `https://virtual-bingo.onrender.com`, not `192.168.x.x`
+- The QR URL should start with `https://virtual-bingo-pfgs.onrender.com`, not `192.168.x.x`
 - Scan the QR from a second device — the join page should load
 - Create a game, draw a number — confirm it appears on the second device
 

@@ -4,7 +4,7 @@ A real-time multiplayer bingo game that runs in any browser. No app download,
 no account, no setup for players. The host opens a lobby, shares a QR code,
 and everyone joins by scanning it and typing their name.
 
-🎮 **[Play now → virtual-bingo.onrender.com](https://virtual-bingo.onrender.com)**
+🎮 **[Play now → virtual-bingo-pfgs.onrender.com](https://virtual-bingo-pfgs.onrender.com)**
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/tummala-hareesh/virtual-bingo)
 
